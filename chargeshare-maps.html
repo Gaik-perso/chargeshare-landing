@@ -1,0 +1,736 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ChargeShare Poland - Podziel się ładowarką EV</title>
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- ⚠️ IMPORTANTE: REMPLACEZ 'VOTRE_CLE_API_GOOGLE_MAPS' PAR VOTRE VRAIE CLÉ -->
+    <script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBO7fMvnBTEDYHK6JPs-Z9UHmS91wYNuGk&callback=initMap&libraries=places"></script>
+    
+    <style>
+        /* Réutiliser tous les styles de la version précédente */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #0A8754;
+            --secondary: #05B86D;
+            --dark: #1a1a1a;
+            --light: #f8f9fa;
+            --white: #ffffff;
+            --gray: #6c757d;
+            --gradient: linear-gradient(135deg, #0A8754 0%, #05B86D 100%);
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            line-height: 1.6;
+            color: var(--dark);
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        /* Navigation */
+        nav {
+            position: fixed;
+            top: 0;
+            width: 100%;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            box-shadow: 0 2px 20px rgba(0, 0, 0, 0.1);
+            z-index: 1000;
+        }
+
+        .nav-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem 0;
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: 800;
+            background: var(--gradient);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 2rem;
+            align-items: center;
+        }
+
+        .nav-links a {
+            text-decoration: none;
+            color: var(--dark);
+            font-weight: 500;
+            transition: color 0.3s;
+        }
+
+        .nav-links a:hover {
+            color: var(--primary);
+        }
+
+        .lang-toggle {
+            background: var(--gradient);
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        /* Hero */
+        .hero {
+            margin-top: 80px;
+            min-height: 90vh;
+            background: var(--gradient);
+            position: relative;
+            display: flex;
+            align-items: center;
+            color: white;
+        }
+
+        .hero-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 3rem;
+            align-items: center;
+        }
+
+        .hero-text h1 {
+            font-size: 3.5rem;
+            font-weight: 800;
+            line-height: 1.2;
+            margin-bottom: 1.5rem;
+        }
+
+        .hero-text p {
+            font-size: 1.3rem;
+            margin-bottom: 2rem;
+            opacity: 0.95;
+        }
+
+        .cta-buttons {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .btn {
+            padding: 1rem 2rem;
+            border-radius: 50px;
+            text-decoration: none;
+            font-weight: 600;
+            transition: all 0.3s;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 1.1rem;
+        }
+
+        .btn-primary {
+            background: white;
+            color: var(--primary);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-3px);
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: 2px solid white;
+        }
+
+        .btn-secondary:hover {
+            background: white;
+            color: var(--primary);
+        }
+
+        /* ==================== GOOGLE MAPS CONTAINER ==================== */
+        .map-section {
+            padding: 5rem 0;
+            background: var(--light);
+        }
+
+        .section-title {
+            text-align: center;
+            font-size: 2.5rem;
+            font-weight: 800;
+            margin-bottom: 3rem;
+            color: var(--dark);
+        }
+
+        #map {
+            width: 100%;
+            height: 600px;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+        }
+
+        .map-controls {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .map-controls button {
+            background: var(--gradient);
+            color: white;
+            border: none;
+            padding: 1rem 2rem;
+            border-radius: 50px;
+            font-weight: 600;
+            cursor: pointer;
+            margin: 0 0.5rem;
+            transition: transform 0.3s;
+        }
+
+        .map-controls button:hover {
+            transform: scale(1.05);
+        }
+
+        /* Stats */
+        .stats {
+            padding: 5rem 0;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 2rem;
+            text-align: center;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 2rem;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        }
+
+        .stat-number {
+            font-size: 3rem;
+            font-weight: 800;
+            background: var(--gradient);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .stat-label {
+            color: var(--gray);
+            font-weight: 600;
+        }
+
+        /* Pre-registration */
+        .pre-registration {
+            padding: 5rem 0;
+            background: var(--gradient);
+            color: white;
+        }
+
+        .pre-reg-content {
+            max-width: 700px;
+            margin: 0 auto;
+            text-align: center;
+        }
+
+        .pre-reg-content h2 {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .registration-form {
+            background: white;
+            padding: 3rem;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+            text-align: left;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: var(--dark);
+            font-weight: 600;
+        }
+
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 1rem;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 1rem;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        .form-submit {
+            width: 100%;
+            padding: 1.2rem;
+            background: var(--gradient);
+            color: white;
+            border: none;
+            border-radius: 50px;
+            font-size: 1.1rem;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        .form-submit:hover {
+            transform: scale(1.05);
+        }
+
+        /* Footer */
+        footer {
+            background: var(--dark);
+            color: white;
+            padding: 3rem 0 1rem;
+        }
+
+        .footer-content {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .footer-section h3 {
+            margin-bottom: 1rem;
+            color: var(--secondary);
+        }
+
+        .footer-links {
+            list-style: none;
+        }
+
+        .footer-links a {
+            color: rgba(255, 255, 255, 0.8);
+            text-decoration: none;
+        }
+
+        .footer-bottom {
+            text-align: center;
+            padding-top: 2rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            color: rgba(255, 255, 255, 0.6);
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .hero-content {
+                grid-template-columns: 1fr;
+            }
+            
+            .hero-text h1 {
+                font-size: 2rem;
+            }
+            
+            #map {
+                height: 400px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav>
+        <div class="container">
+            <div class="nav-content">
+                <div class="logo">⚡ ChargeShare</div>
+                <div class="nav-links">
+                    <a href="#map-section">Mapa</a>
+                    <a href="#stats">Statystyki</a>
+                    <a href="#join">Dołącz</a>
+                    <button class="lang-toggle" onclick="toggleLanguage()">EN</button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero -->
+    <section class="hero">
+        <div class="container">
+            <div class="hero-content">
+                <div class="hero-text">
+                    <h1>Podziel się ładowarką EV i zarabiaj!</h1>
+                    <p>Airbnb ładowania elektrycznego w Polsce. Znajdź ładowarki w całym kraju.</p>
+                    <div class="cta-buttons">
+                        <a href="#join" class="btn btn-primary">
+                            <i class="fas fa-user-plus"></i> Zostań Gospodarzem
+                        </a>
+                        <a href="#map-section" class="btn btn-secondary">
+                            <i class="fas fa-map-marked-alt"></i> Przeglądaj Mapę
+                        </a>
+                    </div>
+                </div>
+                <div class="hero-visual">
+                    <img src="https://images.unsplash.com/photo-1593941707882-a5bba14938c7?w=600&h=400&fit=crop" alt="EV Charging" style="border-radius: 20px; width: 100%; box-shadow: 0 20px 60px rgba(0,0,0,0.3);">
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Google Maps Section -->
+    <section class="map-section" id="map-section">
+        <div class="container">
+            <h2 class="section-title">Znajdź Ładowarki w Twojej Okolicy</h2>
+            
+            <div class="map-controls">
+                <button onclick="centerOnWarsaw()">
+                    <i class="fas fa-location-dot"></i> Warszawa
+                </button>
+                <button onclick="centerOnKrakow()">
+                    <i class="fas fa-location-dot"></i> Kraków
+                </button>
+                <button onclick="centerOnGdansk()">
+                    <i class="fas fa-location-dot"></i> Gdańsk
+                </button>
+                <button onclick="getUserLocation()">
+                    <i class="fas fa-crosshairs"></i> Moja Lokalizacja
+                </button>
+            </div>
+            
+            <div id="map"></div>
+        </div>
+    </section>
+
+    <!-- Stats -->
+    <section class="stats" id="stats">
+        <div class="container">
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-number">89K+</div>
+                    <div class="stat-label">Pojazdów elektrycznych w Polsce</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">95%</div>
+                    <div class="stat-label">Ładowarek prywatnych niewykorzystanych</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">30%</div>
+                    <div class="stat-label">Taniej niż publiczne ładowanie</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">540 PLN</div>
+                    <div class="stat-label">Średni miesięczny przychód gospodarza</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Pre-Registration -->
+    <section class="pre-registration" id="join">
+        <div class="container">
+            <div class="pre-reg-content">
+                <h2>Dołącz do Beta!</h2>
+                <p>Bądź wśród pierwszych użytkowników ChargeShare</p>
+
+                <!-- ⚠️ FORMULAIRE GOOGLE FORMS INTÉGRÉ -->
+                
+                <!-- Formulaire personnalisé qui POST vers Google Forms -->
+                <form class="registration-form hidden" id="customForm" 
+                      action="https://docs.google.com/forms/d/e/1FAIpQLScRiT0Zym7KRjgzUGe7FNRjn4AhZIECZ0HBck9V2IlgAeWp-w/formResponse" 
+                      method="POST" 
+                      target="hidden_iframe"
+                      onsubmit="handleFormSubmit()">
+                    
+                    <!-- ⚠️ INSTRUCTIONS POUR OBTENIR LES entry.XXXXX :
+                         1. Ouvrir votre Google Form en mode édition
+                         2. Cliquer sur les 3 points > "Obtenir le lien prérempli"
+                         3. Remplir le formulaire avec des données test
+                         4. Copier le lien généré
+                         5. Le lien contient : entry.123456789=test@email.com
+                         6. Remplacer les entry.XXXXX ci-dessous par ces valeurs
+                    -->
+                    
+                    <div class="form-group">
+                        <label for="email">
+                            <i class="fas fa-envelope"></i> Adres Email
+                        </label>
+                        <input type="email" 
+                               name="entry.900723696" 
+                               id="email" 
+                               required 
+                               placeholder="twoj@email.pl"
+                               style="padding-left: 45px;">
+                        <i class="fas fa-envelope" style="position: absolute; left: 15px; top: 48px; color: #6c757d;"></i>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="role">
+                            <i class="fas fa-user-tag"></i> Jestem...
+                        </label>
+                        <select name="entry.2040123220" id="role" required>
+                            <option value="">Wybierz rolę</option>
+                            <option value="Gospodarz">🏠 Gospodarz (mam ładowarkę)</option>
+                            <option value="Użytkownik">🔌 Użytkownik (szukam ładowania)</option>
+                            <option value="Oboje">⚡ Oboje</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="city">
+                            <i class="fas fa-map-marker-alt"></i> Miasto
+                        </label>
+                        <input type="text" 
+                               name="entry.1860861843" 
+                               id="city" 
+                               required 
+                               placeholder="np. Warszawa"
+                               style="padding-left: 45px;">
+                        <i class="fas fa-map-marker-alt" style="position: absolute; left: 15px; top: 48px; color: #6c757d;"></i>
+                    </div>
+
+                    <button type="submit" class="form-submit">
+                        <i class="fas fa-rocket"></i> Zapisz się na Beta
+                    </button>
+                </form>
+                
+                <!-- iframe caché pour la soumission sans redirection -->
+                <iframe name="hidden_iframe" id="hidden_iframe" style="display:none;"></iframe>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer>
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h3>ChargeShare</h3>
+                    <p>Rewolucja w ładowaniu pojazdów elektrycznych w Polsce</p>
+                </div>
+
+                <div class="footer-section">
+                    <h3>Kontakt</h3>
+                    <p><i class="fas fa-envelope"></i> vincent@chargeshare.pl</p>
+                    <p>Zgodne z regulacjami URE</p>
+                </div>
+            </div>
+
+            <div class="footer-bottom">
+                <p>&copy; 2025 ChargeShare Poland. Wszelkie prawa zastrzeżone.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- JavaScript -->
+    <!-- ⚠️ GOOGLE ANALYTICS 4 - REMPLACER G-XXXXXXXXXX -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-0NZQKXH851"></script>
+    
+    <script>
+        // ==================== GOOGLE MAPS INITIALIZATION ====================
+        let map;
+        let markers = [];
+
+        // Données de démonstration (à remplacer par API backend)
+        const demoChargers = [
+            { lat: 52.2297, lng: 21.0122, name: "Warszawa - Centrum", price: "1.50 PLN/kWh", power: "22 kW" },
+            { lat: 52.2435, lng: 21.0131, name: "Warszawa - Praga", price: "1.20 PLN/kWh", power: "11 kW" },
+            { lat: 50.0647, lng: 19.9450, name: "Kraków - Stare Miasto", price: "1.80 PLN/kWh", power: "50 kW" },
+            { lat: 50.0500, lng: 19.9360, name: "Kraków - Kazimierz", price: "1.40 PLN/kWh", power: "22 kW" },
+            { lat: 54.3520, lng: 18.6466, name: "Gdańsk - Śródmieście", price: "1.60 PLN/kWh", power: "22 kW" },
+            { lat: 51.7592, lng: 19.4560, name: "Łódź - Centrum", price: "1.30 PLN/kWh", power: "11 kW" }
+        ];
+
+        function initMap() {
+            // Centrer sur la Pologne
+            map = new google.maps.Map(document.getElementById('map'), {
+                center: { lat: 52.0, lng: 19.5 },
+                zoom: 7,
+                styles: [
+                    {
+                        "featureType": "poi",
+                        "elementType": "labels",
+                        "stylers": [{ "visibility": "off" }]
+                    }
+                ]
+            });
+
+            // Ajouter les marqueurs de démonstration
+            addMarkers();
+        }
+
+        function addMarkers() {
+            // Supprimer les anciens marqueurs
+            markers.forEach(marker => marker.setMap(null));
+            markers = [];
+
+            // Ajouter les nouveaux marqueurs
+            demoChargers.forEach(charger => {
+                const marker = new google.maps.Marker({
+                    position: { lat: charger.lat, lng: charger.lng },
+                    map: map,
+                    title: charger.name,
+                    icon: {
+                        path: google.maps.SymbolPath.CIRCLE,
+                        scale: 10,
+                        fillColor: '#05B86D',
+                        fillOpacity: 0.8,
+                        strokeColor: '#0A8754',
+                        strokeWeight: 2
+                    },
+                    animation: google.maps.Animation.DROP
+                });
+
+                // Info window
+                const infoWindow = new google.maps.InfoWindow({
+                    content: `
+                        <div style="padding: 10px; font-family: Inter;">
+                            <h3 style="margin: 0 0 10px 0; color: #0A8754;">${charger.name}</h3>
+                            <p style="margin: 5px 0;"><strong>Cena:</strong> ${charger.price}</p>
+                            <p style="margin: 5px 0;"><strong>Moc:</strong> ${charger.power}</p>
+                            <button style="margin-top: 10px; padding: 8px 16px; background: linear-gradient(135deg, #0A8754, #05B86D); color: white; border: none; border-radius: 20px; cursor: pointer;">
+                                Zarezerwuj
+                            </button>
+                        </div>
+                    `
+                });
+
+                marker.addListener('click', () => {
+                    infoWindow.open(map, marker);
+                });
+
+                markers.push(marker);
+            });
+        }
+
+        // ==================== MAP CONTROLS ====================
+        function centerOnWarsaw() {
+            map.setCenter({ lat: 52.2297, lng: 21.0122 });
+            map.setZoom(12);
+        }
+
+        function centerOnKrakow() {
+            map.setCenter({ lat: 50.0647, lng: 19.9450 });
+            map.setZoom(12);
+        }
+
+        function centerOnGdansk() {
+            map.setCenter({ lat: 54.3520, lng: 18.6466 });
+            map.setZoom(12);
+        }
+
+        function getUserLocation() {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    (position) => {
+                        const userPos = {
+                            lat: position.coords.latitude,
+                            lng: position.coords.longitude
+                        };
+                        map.setCenter(userPos);
+                        map.setZoom(13);
+
+                        // Ajouter un marqueur pour la position de l'utilisateur
+                        new google.maps.Marker({
+                            position: userPos,
+                            map: map,
+                            icon: {
+                                path: google.maps.SymbolPath.CIRCLE,
+                                scale: 8,
+                                fillColor: '#FF0000',
+                                fillOpacity: 1,
+                                strokeColor: '#FFFFFF',
+                                strokeWeight: 2
+                            }
+                        });
+                    },
+                    () => {
+                        alert('Nie udało się uzyskać Twojej lokalizacji.');
+                    }
+                );
+            } else {
+                alert('Geolokalizacja nie jest obsługiwana przez Twoją przeglądarkę.');
+            }
+        }
+
+        // ==================== FORM SUBMISSION ====================
+        function handleFormSubmit() {
+            // Message de confirmation après soumission
+            setTimeout(() => {
+                alert('🎉 Dziękujemy! Zapisaliśmy Cię na listę beta!');
+                document.getElementById('customForm').reset();
+            }, 1000);
+            return true;
+        }
+
+        // ==================== GOOGLE ANALYTICS 4 ====================
+        // ⚠️ REMPLACER 'G-XXXXXXXXXX' PAR VOTRE MEASUREMENT ID
+        // Pour obtenir : analytics.google.com > Admin > Data Streams > Web
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', 'G-0NZQKXH851');
+        
+        // Track custom events
+        function trackEvent(eventName, params) {
+            gtag('event', eventName, params);
+        }
+        
+        // Track CTA clicks
+        document.querySelectorAll('.btn-primary, .btn-secondary').forEach(btn => {
+            btn.addEventListener('click', function() {
+                trackEvent('cta_click', {
+                    button_text: this.textContent.trim(),
+                    button_location: this.closest('section').className
+                });
+            });
+        });
+        
+        // Track form interactions
+        document.getElementById('customForm')?.addEventListener('submit', function() {
+            trackEvent('form_submit', {
+                form_type: 'beta_registration'
+            });
+        });
+
+        // ==================== LANGUAGE TOGGLE ====================
+        function toggleLanguage() {
+            alert('Fonction multilingue à implémenter avec i18n');
+        }
+
+        // ==================== SMOOTH SCROLL ====================
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({ behavior: 'smooth' });
+                }
+            });
+        });
+    </script>
+</body>
+</html>
